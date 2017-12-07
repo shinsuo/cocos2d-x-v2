@@ -1,4 +1,4 @@
-/* Copyright (c) 2007 Scott Lembcke
+/* Copyright (c) 2013 Scott Lembcke and Howling Moon Software
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,8 +19,7 @@
  * SOFTWARE.
  */
 
-#include "chipmunk_private.h"
-#include "constraints/util.h"
+#include "chipmunk/chipmunk_private.h"
 
 static void
 preStep(cpPinJoint *joint, cpFloat dt)
@@ -28,8 +27,8 @@ preStep(cpPinJoint *joint, cpFloat dt)
 	cpBody *a = joint->constraint.a;
 	cpBody *b = joint->constraint.b;
 	
-	joint->r1 = cpvrotate(joint->anchr1, a->rot);
-	joint->r2 = cpvrotate(joint->anchr2, b->rot);
+	joint->r1 = cpTransformVect(a->transform, cpvsub(joint->anchorA, a->cog));
+	joint->r2 = cpTransformVect(b->transform, cpvsub(joint->anchorB, b->cog));
 	
 	cpVect delta = cpvsub(cpvadd(b->p, joint->r2), cpvadd(a->p, joint->r1));
 	cpFloat dist = cpvlength(delta);
@@ -87,7 +86,6 @@ static const cpConstraintClass klass = {
 	(cpConstraintApplyImpulseImpl)applyImpulse,
 	(cpConstraintGetImpulseImpl)getImpulse,
 };
-CP_DefineClassGetter(cpPinJoint)
 
 
 cpPinJoint *
@@ -97,16 +95,16 @@ cpPinJointAlloc(void)
 }
 
 cpPinJoint *
-cpPinJointInit(cpPinJoint *joint, cpBody *a, cpBody *b, cpVect anchr1, cpVect anchr2)
+cpPinJointInit(cpPinJoint *joint, cpBody *a, cpBody *b, cpVect anchorA, cpVect anchorB)
 {
 	cpConstraintInit((cpConstraint *)joint, &klass, a, b);
 	
-	joint->anchr1 = anchr1;
-	joint->anchr2 = anchr2;
+	joint->anchorA = anchorA;
+	joint->anchorB = anchorB;
 	
 	// STATIC_BODY_CHECK
-	cpVect p1 = (a ? cpvadd(a->p, cpvrotate(anchr1, a->rot)) : anchr1);
-	cpVect p2 = (b ? cpvadd(b->p, cpvrotate(anchr2, b->rot)) : anchr2);
+	cpVect p1 = (a ? cpTransformPoint(a->transform, anchorA) : anchorA);
+	cpVect p2 = (b ? cpTransformPoint(b->transform, anchorB) : anchorB);
 	joint->dist = cpvlength(cpvsub(p2, p1));
 	
 	cpAssertWarn(joint->dist > 0.0, "You created a 0 length pin joint. A pivot joint will be much more stable.");
@@ -117,7 +115,58 @@ cpPinJointInit(cpPinJoint *joint, cpBody *a, cpBody *b, cpVect anchr1, cpVect an
 }
 
 cpConstraint *
-cpPinJointNew(cpBody *a, cpBody *b, cpVect anchr1, cpVect anchr2)
+cpPinJointNew(cpBody *a, cpBody *b, cpVect anchorA, cpVect anchorB)
 {
-	return (cpConstraint *)cpPinJointInit(cpPinJointAlloc(), a, b, anchr1, anchr2);
+	return (cpConstraint *)cpPinJointInit(cpPinJointAlloc(), a, b, anchorA, anchorB);
+}
+
+cpBool
+cpConstraintIsPinJoint(const cpConstraint *constraint)
+{
+	return (constraint->klass == &klass);
+}
+
+cpVect
+cpPinJointGetAnchorA(const cpConstraint *constraint)
+{
+	cpAssertHard(cpConstraintIsPinJoint(constraint), "Constraint is not a pin joint.");
+	return ((cpPinJoint *)constraint)->anchorA;
+}
+
+void
+cpPinJointSetAnchorA(cpConstraint *constraint, cpVect anchorA)
+{
+	cpAssertHard(cpConstraintIsPinJoint(constraint), "Constraint is not a pin joint.");
+	cpConstraintActivateBodies(constraint);
+	((cpPinJoint *)constraint)->anchorA = anchorA;
+}
+
+cpVect
+cpPinJointGetAnchorB(const cpConstraint *constraint)
+{
+	cpAssertHard(cpConstraintIsPinJoint(constraint), "Constraint is not a pin joint.");
+	return ((cpPinJoint *)constraint)->anchorB;
+}
+
+void
+cpPinJointSetAnchorB(cpConstraint *constraint, cpVect anchorB)
+{
+	cpAssertHard(cpConstraintIsPinJoint(constraint), "Constraint is not a pin joint.");
+	cpConstraintActivateBodies(constraint);
+	((cpPinJoint *)constraint)->anchorB = anchorB;
+}
+
+cpFloat
+cpPinJointGetDist(const cpConstraint *constraint)
+{
+	cpAssertHard(cpConstraintIsPinJoint(constraint), "Constraint is not a pin joint.");
+	return ((cpPinJoint *)constraint)->dist;
+}
+
+void
+cpPinJointSetDist(cpConstraint *constraint, cpFloat dist)
+{
+	cpAssertHard(cpConstraintIsPinJoint(constraint), "Constraint is not a pin joint.");
+	cpConstraintActivateBodies(constraint);
+	((cpPinJoint *)constraint)->dist = dist;
 }

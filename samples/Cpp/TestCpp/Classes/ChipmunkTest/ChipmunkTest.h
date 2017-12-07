@@ -24,6 +24,15 @@ public:
     void addNewSpriteAtPosition(CCPoint p);
     void update(float dt);
     void toggleDebugCallback(CCObject* pSender);
+    
+    virtual bool ccTouchBegan(CCTouch *pTouch, CCEvent *pEvent);
+    virtual void ccTouchMoved(CCTouch *pTouch, CCEvent *pEvent);
+    virtual void ccTouchEnded(CCTouch *pTouch, CCEvent *pEvent);
+    virtual void ccTouchCancelled(CCTouch *pTouch, CCEvent *pEvent);
+    
+//    virtual void ccTouchesBegan(CCSet* touches, CCEvent* event);
+//    virtual void ccTouchesMoved(CCSet* touches, CCEvent* event);
+//    virtual void ccTouchesCancelled(CCSet* touches, CCEvent* event);
     virtual void ccTouchesEnded(CCSet* touches, CCEvent* event);
     virtual void didAccelerate(CCAcceleration* pAccelerationValue);
 

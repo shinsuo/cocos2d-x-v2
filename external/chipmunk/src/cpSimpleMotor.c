@@ -1,4 +1,4 @@
-/* Copyright (c) 2007 Scott Lembcke
+/* Copyright (c) 2013 Scott Lembcke and Howling Moon Software
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,8 +19,7 @@
  * SOFTWARE.
  */
 
-#include "chipmunk_private.h"
-#include "constraints/util.h"
+#include "chipmunk/chipmunk_private.h"
 
 static void
 preStep(cpSimpleMotor *joint, cpFloat dt)
@@ -77,7 +76,6 @@ static const cpConstraintClass klass = {
 	(cpConstraintApplyImpulseImpl)applyImpulse,
 	(cpConstraintGetImpulseImpl)getImpulse,
 };
-CP_DefineClassGetter(cpSimpleMotor)
 
 cpSimpleMotor *
 cpSimpleMotorAlloc(void)
@@ -101,4 +99,25 @@ cpConstraint *
 cpSimpleMotorNew(cpBody *a, cpBody *b, cpFloat rate)
 {
 	return (cpConstraint *)cpSimpleMotorInit(cpSimpleMotorAlloc(), a, b, rate);
+}
+
+cpBool
+cpConstraintIsSimpleMotor(const cpConstraint *constraint)
+{
+	return (constraint->klass == &klass);
+}
+
+cpFloat
+cpSimpleMotorGetRate(const cpConstraint *constraint)
+{
+	cpAssertHard(cpConstraintIsSimpleMotor(constraint), "Constraint is not a pin joint.");
+	return ((cpSimpleMotor *)constraint)->rate;
+}
+
+void
+cpSimpleMotorSetRate(cpConstraint *constraint, cpFloat rate)
+{
+	cpAssertHard(cpConstraintIsSimpleMotor(constraint), "Constraint is not a pin joint.");
+	cpConstraintActivateBodies(constraint);
+	((cpSimpleMotor *)constraint)->rate = rate;
 }

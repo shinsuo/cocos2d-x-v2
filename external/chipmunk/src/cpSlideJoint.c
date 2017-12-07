@@ -1,4 +1,4 @@
-/* Copyright (c) 2007 Scott Lembcke
+/* Copyright (c) 2013 Scott Lembcke and Howling Moon Software
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,8 +19,7 @@
  * SOFTWARE.
  */
 
-#include "chipmunk_private.h"
-#include "constraints/util.h"
+#include "chipmunk/chipmunk_private.h"
 
 static void
 preStep(cpSlideJoint *joint, cpFloat dt)
@@ -28,18 +27,18 @@ preStep(cpSlideJoint *joint, cpFloat dt)
 	cpBody *a = joint->constraint.a;
 	cpBody *b = joint->constraint.b;
 	
-	joint->r1 = cpvrotate(joint->anchr1, a->rot);
-	joint->r2 = cpvrotate(joint->anchr2, b->rot);
+	joint->r1 = cpTransformVect(a->transform, cpvsub(joint->anchorA, a->cog));
+	joint->r2 = cpTransformVect(b->transform, cpvsub(joint->anchorB, b->cog));
 	
 	cpVect delta = cpvsub(cpvadd(b->p, joint->r2), cpvadd(a->p, joint->r1));
 	cpFloat dist = cpvlength(delta);
 	cpFloat pdist = 0.0f;
 	if(dist > joint->max) {
 		pdist = dist - joint->max;
-		joint->n = cpvnormalize_safe(delta);
+		joint->n = cpvnormalize(delta);
 	} else if(dist < joint->min) {
 		pdist = joint->min - dist;
-		joint->n = cpvneg(cpvnormalize_safe(delta));
+		joint->n = cpvneg(cpvnormalize(delta));
 	} else {
 		joint->n = cpvzero;
 		joint->jnAcc = 0.0f;
@@ -101,7 +100,6 @@ static const cpConstraintClass klass = {
 	(cpConstraintApplyImpulseImpl)applyImpulse,
 	(cpConstraintGetImpulseImpl)getImpulse,
 };
-CP_DefineClassGetter(cpSlideJoint)
 
 cpSlideJoint *
 cpSlideJointAlloc(void)
@@ -110,12 +108,12 @@ cpSlideJointAlloc(void)
 }
 
 cpSlideJoint *
-cpSlideJointInit(cpSlideJoint *joint, cpBody *a, cpBody *b, cpVect anchr1, cpVect anchr2, cpFloat min, cpFloat max)
+cpSlideJointInit(cpSlideJoint *joint, cpBody *a, cpBody *b, cpVect anchorA, cpVect anchorB, cpFloat min, cpFloat max)
 {
 	cpConstraintInit((cpConstraint *)joint, &klass, a, b);
 	
-	joint->anchr1 = anchr1;
-	joint->anchr2 = anchr2;
+	joint->anchorA = anchorA;
+	joint->anchorB = anchorB;
 	joint->min = min;
 	joint->max = max;
 	
@@ -125,7 +123,73 @@ cpSlideJointInit(cpSlideJoint *joint, cpBody *a, cpBody *b, cpVect anchr1, cpVec
 }
 
 cpConstraint *
-cpSlideJointNew(cpBody *a, cpBody *b, cpVect anchr1, cpVect anchr2, cpFloat min, cpFloat max)
+cpSlideJointNew(cpBody *a, cpBody *b, cpVect anchorA, cpVect anchorB, cpFloat min, cpFloat max)
 {
-	return (cpConstraint *)cpSlideJointInit(cpSlideJointAlloc(), a, b, anchr1, anchr2, min, max);
+	return (cpConstraint *)cpSlideJointInit(cpSlideJointAlloc(), a, b, anchorA, anchorB, min, max);
+}
+
+cpBool
+cpConstraintIsSlideJoint(const cpConstraint *constraint)
+{
+	return (constraint->klass == &klass);
+}
+
+cpVect
+cpSlideJointGetAnchorA(const cpConstraint *constraint)
+{
+	cpAssertHard(cpConstraintIsSlideJoint(constraint), "Constraint is not a slide joint.");
+	return ((cpSlideJoint *)constraint)->anchorA;
+}
+
+void
+cpSlideJointSetAnchorA(cpConstraint *constraint, cpVect anchorA)
+{
+	cpAssertHard(cpConstraintIsSlideJoint(constraint), "Constraint is not a slide joint.");
+	cpConstraintActivateBodies(constraint);
+	((cpSlideJoint *)constraint)->anchorA = anchorA;
+}
+
+cpVect
+cpSlideJointGetAnchorB(const cpConstraint *constraint)
+{
+	cpAssertHard(cpConstraintIsSlideJoint(constraint), "Constraint is not a slide joint.");
+	return ((cpSlideJoint *)constraint)->anchorB;
+}
+
+void
+cpSlideJointSetAnchorB(cpConstraint *constraint, cpVect anchorB)
+{
+	cpAssertHard(cpConstraintIsSlideJoint(constraint), "Constraint is not a slide joint.");
+	cpConstraintActivateBodies(constraint);
+	((cpSlideJoint *)constraint)->anchorB = anchorB;
+}
+
+cpFloat
+cpSlideJointGetMin(const cpConstraint *constraint)
+{
+	cpAssertHard(cpConstraintIsSlideJoint(constraint), "Constraint is not a slide joint.");
+	return ((cpSlideJoint *)constraint)->min;
+}
+
+void
+cpSlideJointSetMin(cpConstraint *constraint, cpFloat min)
+{
+	cpAssertHard(cpConstraintIsSlideJoint(constraint), "Constraint is not a slide joint.");
+	cpConstraintActivateBodies(constraint);
+	((cpSlideJoint *)constraint)->min = min;
+}
+
+cpFloat
+cpSlideJointGetMax(const cpConstraint *constraint)
+{
+	cpAssertHard(cpConstraintIsSlideJoint(constraint), "Constraint is not a slide joint.");
+	return ((cpSlideJoint *)constraint)->max;
+}
+
+void
+cpSlideJointSetMax(cpConstraint *constraint, cpFloat max)
+{
+	cpAssertHard(cpConstraintIsSlideJoint(constraint), "Constraint is not a slide joint.");
+	cpConstraintActivateBodies(constraint);
+	((cpSlideJoint *)constraint)->max = max;
 }

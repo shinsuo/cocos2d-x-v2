@@ -209,6 +209,21 @@ void ChipmunkTestLayer::onEnter()
     CCLayer::onEnter();
 }
 
+bool ChipmunkTestLayer::ccTouchBegan(CCTouch *pTouch, CCEvent *pEvent){
+    return true;
+}
+void ChipmunkTestLayer::ccTouchMoved(CCTouch *pTouch, CCEvent *pEvent){
+    CCPoint touch_pos = pTouch->getLocation();
+    cpVect start_pos;
+    start_pos.x = touch_pos.x;
+    start_pos.y = touch_pos.y;
+    cps
+}
+void ChipmunkTestLayer::ccTouchEnded(CCTouch *pTouch, CCEvent *pEvent){
+}
+void ChipmunkTestLayer::ccTouchCancelled(CCTouch *pTouch, CCEvent *pEvent){
+}
+
 void ChipmunkTestLayer::ccTouchesEnded(CCSet* touches, CCEvent* event)
 {
     //Add a new body/atlas sprite at the touched location
